@@ -1,0 +1,12 @@
+{% load ui %}<tr>
+<td><strong>{{ r.supervisor }}</strong><div class="small muted">{{ r.supervisor.department|dash }}</div></td>
+<td>{{ r.assigned|default:"—" }}{% if r.max_schools %}<span class="small muted"> / {{ r.max_schools }}</span>{% endif %}{% if r.load and r.load > 100 %} <span class="badge danger">عبء زائد</span>{% endif %}</td>
+<td class="t-{{ r.coverage|level }}">{{ r.coverage|pct }}</td>
+<td class="t-{{ r.execution|level }}">{{ r.execution|pct }}</td>
+<td class="t-{{ r.plan_discipline|level }}">{{ r.plan_discipline|pct }}</td>
+<td class="t-{{ r.priority_coverage|level }}">{{ r.priority_coverage|pct }}{% if r.priority_total %}<span class="small muted"> ({{ r.priority_total }})</span>{% endif %}</td>
+<td>{% if r.open_forms %}<span class="badge danger">{{ r.open_forms }} مفتوحة</span>{% elif r.followup is None %}—{% else %}<span class="badge ok">منتظم</span>{% endif %}{% if r.avg_close_days is not None %}<div class="small muted">إقفال خلال {{ r.avg_close_days }} يوم</div>{% endif %}</td>
+<td class="t-{{ r.results|level }}">{{ r.results|pct }}</td>
+<td class="muted">{{ r.visits|default:"—" }}</td>
+<td><strong class="t-{{ r.composite|level }}">{{ r.composite|pct }}</strong>{% if r.composite is None %}<div class="small t-muted">بيانات غير كافية</div>{% endif %}</td>
+</tr>

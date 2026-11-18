@@ -1,0 +1,45 @@
+{% extends "base.html" %}{% load ui %}{% block title %}{{ school }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>{{ school }}</h1><p>بطاقة المدرسة · الرقم الوزاري {{ school.ministry_code }}</p></div>
+  <div class="flex">{% if school.is_first_improvement %}<span class="badge warn">الأولى للتحسين</span>{% endif %}
+  <span class="badge {% if school.priority == 2 %}danger{% elif school.priority == 1 %}warn{% else %}muted{% endif %}">أولوية {{ school.get_priority_display }}</span>
+  {% if user.is_staff %}<a class="btn ghost sm" href="{% url 'admin:org_school_change' school.pk %}">تعديل</a>{% endif %}</div>
+</div>
+<div class="grid g3">
+  <div class="card"><h2>التعريف</h2><dl class="kv">
+    <dt>القطاع</dt><dd>{{ school.sector }}</dd><dt>المرحلة</dt><dd>{{ school.get_stage_display }}</dd>
+    <dt>بنين/بنات</dt><dd>{{ school.get_gender_display }}</dd><dt>نوع المبنى</dt><dd>{{ school.building_type|dash }}</dd>
+    <dt>العنوان</dt><dd>{{ school.address|dash }}</dd><dt>الموقع</dt><dd>{% if school.location_url %}<a href="{{ school.location_url }}" target="_blank" rel="noopener">فتح الخريطة</a>{% else %}—{% endif %}</dd></dl></div>
+  <div class="card"><h2>القيادة والتواصل</h2><dl class="kv">
+    <dt>القائد/ة</dt><dd>{{ school.principal_name|dash }}</dd><dt>الجوال</dt><dd dir="ltr" style="text-align:right">{{ school.principal_phone|dash }}</dd>
+    <dt>هاتف المدرسة</dt><dd dir="ltr" style="text-align:right">{{ school.phone|dash }}</dd><dt>البريد</dt><dd dir="ltr" style="text-align:right">{{ school.email|dash }}</dd></dl></div>
+  <div class="card"><h2>الأعداد</h2><dl class="kv">
+    <dt>الطلاب</dt><dd>{{ school.students_count|dash }}</dd><dt>المعلمون</dt><dd>{{ school.teachers_count|dash }}</dd>
+    <dt>الفصول</dt><dd>{{ school.classes_count|dash }}</dd></dl></div>
+</div>
+<div class="grid g2">
+  <div class="card"><h2>الإسناد</h2>
+    <ul class="list">{% for a in assignments %}<li><span>{{ a.supervisor }}</span><span class="small muted">{{ a.start_date|date:"j/n/Y" }} ← {{ a.end_date|date:"j/n/Y"|default:"مستمر" }}</span>
+    <span class="badge {% if a.is_active %}ok{% else %}muted{% endif %}">{% if a.is_active %}نشط{% else %}منتهٍ{% endif %}</span></li>
+    {% empty %}<li class="empty">غير مسندة لأي مشرف.</li>{% endfor %}</ul></div>
+  <div class="card"><h2>مسارات الاستمارات</h2>
+    {% for c, p, pending in cycles %}
+      <div style="margin-bottom:.75rem"><div class="flex"><strong>{{ c.get_visit_type_display }}{% if c.phase %} ({{ c.get_phase_display }}){% endif %}</strong>
+      <span class="small muted">{{ c.year }}</span><span class="spacer"></span><span class="badge {{ c.status|tone }}">{{ c.get_status_display }}</span></div>
+      <div class="flex small"><div class="progress" style="flex:1"><span style="width:{{ p.pct|default:0 }}%"></span></div><span>{% if p %}{{ p.pct }}٪{% else %}—{% endif %}</span></div>
+      {% if pending %}<div class="small muted">متبقٍ: {% for i in pending|slice:":3" %}{{ i.text }}{% if not forloop.last %}، {% endif %}{% endfor %}{% if pending|length > 3 %} … (+{{ pending|length|add:"-3" }}){% endif %}</div>{% endif %}</div>
+    {% empty %}<div class="empty">لم يبدأ أي مسار بعد.</div>{% endfor %}</div>
+</div>
+<div class="grid g2">
+  <div class="card"><h2>الزيارات</h2>
+    <table><thead><tr><th>التاريخ</th><th>النوع</th><th>المشرف</th><th>الاستمارة</th></tr></thead><tbody>
+    {% for v in visits %}<tr><td>{{ v.date|date:"j/n/Y" }}</td><td>{{ v.get_visit_type_display }}{% if v.phase %} ({{ v.get_phase_display }}){% endif %}<div class="small muted">{{ v.get_mode_display }}</div></td><td>{{ v.supervisor }}</td>
+    <td>{% if v.form %}<a href="{% url 'assessments:form' v.form.pk %}"><span class="badge {{ v.form.status|tone }}">{{ v.form.get_status_display }}</span></a>{% else %}—{% endif %}</td></tr>
+    {% empty %}<tr><td colspan="4" class="empty">لا توجد زيارات مسجلة.</td></tr>{% endfor %}</tbody></table></div>
+  <div class="card"><h2>القادم في الخطط</h2>
+    <ul class="list">{% for i in upcoming %}<li><span>{{ i.get_visit_type_display }} · {{ i.plan.supervisor }}</span><span class="small muted">{{ i.date|date:"l j/n" }}</span></li>
+    {% empty %}<li class="empty">—</li>{% endfor %}</ul>
+    {% if school.notes %}<h3 style="margin-top:1rem">ملاحظات</h3><p class="small">{{ school.notes|linebreaksbr }}</p>{% endif %}</div>
+</div>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends "base.html" %}{% load ui %}{% block title %}نشاط اليوم{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>نشاط اليوم</h1><p>{{ today|date:"l j F Y" }}{% if week %} · {{ week }}{% endif %}</p></div>
+  <a class="btn" href="{% url 'operations:execution' %}">تسجيل التنفيذ</a>
+</div>
+
+{% if open_forms %}
+<div class="alert error">لديك {{ open_forms|length }} استمارة غير مقفلة — الاستمارة غير المقفلة تمنع إنشاء خطة الأسبوع التالي.
+  {% for f in open_forms %}<a href="{% url 'assessments:form' f.pk %}">{{ f.visit.school }}</a>{% if not forloop.last %}، {% endif %}{% endfor %}
+</div>
+{% endif %}
+{% if unlogged %}<div class="alert warning">{{ unlogged }} بند من خطتك بانتظار تسجيل التنفيذ. <a href="{% url 'operations:execution' %}">سجّل الآن</a></div>{% endif %}
+
+<div class="grid g4" style="margin-bottom:1rem">
+  <div class="kpi accent"><div class="label">مدارسي المسندة</div><div class="value">{{ schools_count|default_if_none:"—" }}</div></div>
+  <div class="kpi"><div class="label">بنود خطة الأسبوع</div><div class="value">{% if plan_stats %}{{ plan_stats.total }}{% else %}—{% endif %}</div>
+    <div class="hint">{% if plan %}<span class="badge {{ plan.status|tone }}">{{ plan.get_status_display }}</span>{% else %}لا توجد خطة{% endif %}</div></div>
+  <div class="kpi"><div class="label">نسبة التنفيذ هذا الأسبوع</div><div class="value {% if plan_stats %}t-{{ plan_stats.rate|level }}{% endif %}">{{ plan_stats.rate|pct }}</div>
+    <div class="hint">{% if plan_stats %}{{ plan_stats.executed }} من {{ plan_stats.logged }} مسجّل{% endif %}</div></div>
+  <div class="kpi"><div class="label">خطة الأسبوع القادم</div><div class="value" style="font-size:1.1rem;padding-top:.4rem">
+    {% if next_plan %}<span class="badge {{ next_plan.status|tone }}">{{ next_plan.get_status_display }}</span>{% elif next_week %}<a href="{% url 'operations:plan' next_week.pk %}">أنشئ الخطة</a>{% else %}—{% endif %}</div></div>
+</div>
+
+<div class="card">
+  <div class="card-head"><h2>مهام اليوم</h2>{% if plan %}<a class="small" href="{% url 'operations:plan' plan.week.pk %}">عرض الخطة كاملة</a>{% endif %}</div>
+  {% if items %}
+  <ul class="list">
+    {% for item in items %}
+    <li>{% include "operations/_item_line.html" %}
+      <div class="flex">
+        <span class="badge {{ item.status|tone }}">{{ item.get_status_display }}</span>
+        {% if item.visit and item.visit.form %}<a class="btn sm ghost" href="{% url 'assessments:form' item.visit.form.pk %}">الاستمارة</a>{% endif %}
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}<div class="empty">لا توجد مهام مخططة لليوم.</div>{% endif %}
+</div>
+{% endblock %}

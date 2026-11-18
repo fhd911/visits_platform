@@ -1,0 +1,24 @@
+{% extends "base.html" %}{% load ui %}{% block title %}مدارسي المسندة{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>مدارسي المسندة</h1><p>{{ rows|length }} مدرسة</p></div></div>
+<div class="grid g2">
+{% for r in rows %}
+  <div class="card">
+    <div class="card-head"><h2><a href="{% url 'org:school' r.school.pk %}">{{ r.school }}</a></h2>
+      <div class="flex">{% if r.school.is_first_improvement %}<span class="badge warn">الأولى للتحسين</span>{% endif %}
+      {% if r.school.priority == 2 %}<span class="badge danger">أولوية عالية</span>{% endif %}</div></div>
+    <dl class="kv">
+      <dt>القطاع</dt><dd>{{ r.school.sector }}</dd>
+      <dt>المرحلة</dt><dd>{{ r.school.get_stage_display }} · {{ r.school.get_gender_display }}</dd>
+      <dt>آخر زيارة لي</dt><dd>{{ r.my_last.date|date:"j/n/Y"|dash }}</dd>
+      <dt>الزيارات المتاحة</dt><dd class="small">{{ r.types|join:"، " }}</dd>
+    </dl>
+    {% if r.open_cycles %}<div style="margin-top:.75rem">
+      {% for c, p, pending in r.open_cycles %}
+        <div class="flex small" style="margin-bottom:.3rem"><span style="min-width:170px">{{ c.get_visit_type_display }}{% if c.phase %} ({{ c.get_phase_display }}){% endif %}</span>
+        <div class="progress" style="flex:1"><span style="width:{{ p.pct|default:0 }}%"></span></div><span class="muted">{{ pending }} بند متبقٍ</span></div>
+      {% endfor %}</div>{% endif %}
+  </div>
+{% empty %}<div class="card empty">لا توجد مدارس مسندة إليك حالياً.</div>{% endfor %}
+</div>
+{% endblock %}

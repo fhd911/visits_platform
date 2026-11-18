@@ -1,0 +1,49 @@
+{% load static %}<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}بوابة الزيارات{% endblock %} · بوابة الزيارات</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/app.css' %}">
+</head>
+<body>
+{% block body %}
+{% with url=request.resolver_match.view_name %}
+<div class="layout">
+  <aside class="sidebar">
+    <div class="brand"><span class="logo">ز</span> بوابة الزيارات</div>
+    <nav class="nav">
+      {% if nav_is_supervisor %}
+        <a href="{% url 'operations:today' %}" class="{% if url == 'operations:today' %}active{% endif %}">نشاط اليوم</a>
+        <a href="{% url 'operations:my_plan' %}" class="{% if url == 'operations:plan' %}active{% endif %}">خطتي</a>
+        <a href="{% url 'operations:execution' %}" class="{% if url == 'operations:execution' %}active{% endif %}">تسجيل التنفيذ</a>
+        <a href="{% url 'operations:schools' %}" class="{% if url == 'operations:schools' %}active{% endif %}">مدارسي المسندة</a>
+        <a href="{% url 'operations:history' %}" class="{% if url == 'operations:history' %}active{% endif %}">سجل الخطط</a>
+      {% endif %}
+      {% if nav_is_leadership %}
+        <div class="sep">مركز القيادة</div>
+        <a href="{% url 'command:dashboard' %}" class="{% if url == 'command:dashboard' %}active{% endif %}">لوحة القيادة</a>
+        <a href="{% url 'assessments:queue' %}" class="{% if url == 'assessments:queue' %}active{% endif %}">بانتظار مراجعتي {% if nav_pending_reviews %}<span class="count">{{ nav_pending_reviews }}</span>{% endif %}</a>
+        <a href="{% url 'command:supervisors' %}" class="{% if url == 'command:supervisors' %}active{% endif %}">المشرفون</a>
+        <a href="{% url 'org:schools' %}" class="{% if url == 'org:schools' or url == 'org:school' %}active{% endif %}">المدارس</a>
+        {% if user.is_staff %}<div class="sep">البيانات الأساسية</div><a href="{% url 'admin:index' %}">إدارة البيانات</a>{% endif %}
+      {% endif %}
+    </nav>
+  </aside>
+  <div class="main">
+    <header class="topbar">
+      <div class="who">{{ user.full_name }} · {{ user.get_role_display }}{% if user.department %} · {{ user.department }}{% endif %}</div>
+      <form method="post" action="{% url 'accounts:logout' %}" class="inline">{% csrf_token %}<button class="btn ghost sm">خروج</button></form>
+    </header>
+    <main class="content">
+      {% for m in messages %}<div class="alert {{ m.tags }}">{{ m }}</div>{% endfor %}
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+{% endwith %}
+{% endblock %}
+{% block scripts %}{% endblock %}
+</body>
+</html>

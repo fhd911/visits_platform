@@ -1,0 +1,13 @@
+{% extends "base.html" %}{% block title %}رمز التحقق{% endblock %}
+{% block body %}
+<div class="auth-wrap"><div class="card auth-card">
+  {% for m in messages %}<div class="alert {{ m.tags }}">{{ m }}</div>{% endfor %}
+  <h1>أدخل رمز التحقق</h1>
+  <p class="muted">أُرسل رمز من 6 أرقام إلى <span dir="ltr">{{ email }}</span>، صالح لمدة 10 دقائق.</p>
+  <form method="post">{% csrf_token %}
+    <div class="field">{{ form.otp }}{{ form.otp.errors }}</div>
+    <button class="btn" style="width:100%;justify-content:center">دخول</button>
+  </form>
+  <p class="small" style="margin-top:1rem"><a href="{% url 'accounts:login' %}">تغيير البريد أو طلب رمز جديد</a></p>
+</div></div>
+{% endblock %}

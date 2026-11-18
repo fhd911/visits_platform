@@ -1,0 +1,13 @@
+{% extends "base.html" %}{% load ui %}{% block title %}بانتظار مراجعتي{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>استمارات بانتظار مراجعتي</h1><p>المسار: مدير القسم ← مدير الإدارة ← مساعد الشؤون التعليمية</p></div></div>
+<div class="card">
+{% if forms %}
+<table><thead><tr><th>المدرسة</th><th>الزيارة</th><th>المشرف</th><th>تاريخ الإقفال</th><th>المرحلة</th><th></th></tr></thead><tbody>
+{% for f in forms %}<tr><td>{{ f.visit.school }}</td><td>{{ f.visit.get_visit_type_display }}{% if f.visit.phase %} ({{ f.visit.get_phase_display }}){% endif %} · {{ f.visit.get_mode_display }}</td>
+<td>{{ f.visit.supervisor }}</td><td>{{ f.closed_at|date:"j/n/Y" }}</td><td><span class="badge {{ f.status|tone }}">{{ f.get_status_display }}</span></td>
+<td><a class="btn sm" href="{% url 'assessments:form' f.pk %}">مراجعة</a></td></tr>{% endfor %}
+</tbody></table>
+{% else %}<div class="empty">لا توجد استمارات بانتظارك.</div>{% endif %}
+</div>
+{% endblock %}

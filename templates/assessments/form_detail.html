@@ -1,0 +1,92 @@
+{% extends "base.html" %}{% load ui %}{% block title %}استمارة الزيارة{% endblock %}
+{% block content %}
+{% with v=form.visit %}
+<div class="page-head">
+  <div><h1>{{ v.get_visit_type_display }}{% if v.phase %} — مرحلة {{ v.get_phase_display }}{% endif %}</h1>
+  <p><a href="{% url 'org:school' v.school.pk %}">{{ v.school }}</a> · {{ v.date|date:"l j/n/Y" }} · {{ v.get_mode_display }} · {{ v.supervisor }}</p></div>
+  <span class="badge {{ form.status|tone }}">{{ form.get_status_display }}</span>
+</div>
+
+<div class="grid g3" style="margin-bottom:1rem">
+  <div class="kpi"><div class="label">بنود هذه الزيارة</div><div class="value">{{ responses|length|default:"—" }}</div></div>
+  <div class="kpi"><div class="label">اكتمال المسار</div><div class="value">{% if progress %}{{ progress.pct }}٪{% else %}—{% endif %}</div>
+    <div class="hint">{% if progress %}{{ progress.resolved }} من {{ progress.total }} بنداً محسوماً{% endif %}</div></div>
+  <div class="kpi"><div class="label">حالة المسار</div><div class="value" style="font-size:1.1rem;padding-top:.4rem"><span class="badge {{ form.cycle.status|tone }}">{{ form.cycle.get_status_display }}</span></div></div>
+</div>
+
+{% if errors %}<div class="alert error"><strong>أكمل الحقول التالية قبل الإقفال:</strong><ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul></div>{% endif %}
+
+<form method="post" id="ff">{% csrf_token %}
+<div class="card">
+  <div class="card-head"><h2>البنود</h2><span class="small muted">«لا» بسبب عدم التواجد يُرحَّل للزيارة التالية · «لا» لاستحالة التوفير لا يُرحَّل</span></div>
+  {% for r in responses %}
+  <div class="item-row {% if editable and not r.answer %}incomplete{% endif %}" data-row>
+    {% if r.item.section %}<div class="small muted">{{ r.item.section }}</div>{% endif %}
+    <div class="q">{{ forloop.counter }}. {{ r.item.text }}</div>
+    {% if r.carried_from %}<div class="carry">مُرحَّل من زيارة {{ r.carried_from.form.visit.date|date:"j/n" }}: {{ r.carried_from.get_answer_display }}{% if r.carried_from.reason_text %} — {{ r.carried_from.reason_text }}{% endif %}</div>{% endif %}
+    {% if editable %}
+      <div class="answers">
+        {% for val, label in Answer.choices %}
+          <label><input type="radio" name="ans_{{ r.id }}" value="{{ val }}" {% if r.answer == val %}checked{% endif %}>{{ label }}</label>
+        {% endfor %}
+      </div>
+      <div class="reason {% if r.answer == 'no' or r.answer == 'deferred' %}show{% endif %}">
+        <div class="kind-wrap" {% if r.answer != 'no' %}style="display:none"{% endif %}>
+          <select name="kind_{{ r.id }}"><option value="">— نوع السبب —</option>
+          {% for val, label in reason_kinds %}<option value="{{ val }}" {% if r.reason_kind == val %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+          <div style="height:.4rem"></div>
+        </div>
+        <textarea name="reason_{{ r.id }}" rows="2" placeholder="اكتب التوضيح بنفسك">{{ r.reason_text }}</textarea>
+      </div>
+    {% else %}
+      <div class="flex" style="margin-top:.35rem">
+        {% if r.answer == 'yes' %}<span class="badge ok">نعم</span>{% elif r.answer == 'no' %}<span class="badge danger">لا</span>{% elif r.answer == 'deferred' %}<span class="badge warn">لم يُستكمل</span>{% else %}<span class="badge muted">—</span>{% endif %}
+        {% if r.reason_kind %}<span class="badge {% if r.reason_kind == 'impossible' %}muted{% else %}warn{% endif %}">{{ r.get_reason_kind_display }}</span>{% endif %}
+      </div>
+      {% if r.reason_text %}<div class="small" style="margin-top:.3rem">{{ r.reason_text }}</div>{% endif %}
+    {% endif %}
+  </div>
+  {% empty %}<div class="empty">لا توجد بنود متبقية في هذا المسار.</div>{% endfor %}
+</div>
+
+<div class="card">
+  <h2>الخلاصة</h2>
+  {% if editable %}
+    <div class="field"><label>ملخص الزيارة</label><textarea name="summary" rows="3">{{ form.summary }}</textarea></div>
+    <div class="field"><label>التوصيات</label><textarea name="recommendations" rows="3">{{ form.recommendations }}</textarea></div>
+    <div class="flex"><button class="btn ghost" name="action" value="save">حفظ مسودة</button>
+      <button class="btn" name="action" value="close" onclick="return confirm('بعد الإقفال تنتقل الاستمارة لمدير القسم ولا يمكن تعديلها. متابعة؟')">إقفال الاستمارة</button></div>
+  {% else %}
+    <dl class="kv"><dt>ملخص الزيارة</dt><dd>{{ form.summary|dash|linebreaksbr }}</dd><dt>التوصيات</dt><dd>{{ form.recommendations|dash|linebreaksbr }}</dd>
+    <dt>تاريخ الإقفال</dt><dd>{{ form.closed_at|date:"j/n/Y H:i"|dash }}</dd></dl>
+  {% endif %}
+</div>
+</form>
+
+<div class="card">
+  <h2>مسار المراجعة والملاحظات</h2>
+  {% if reviews %}<ul class="timeline">{% for rv in reviews %}
+    <li><strong>{{ rv.stage_label }}</strong> — {{ rv.reviewer }} <span class="small muted">{{ rv.created_at|date:"j/n/Y" }}</span>{% if rv.returned %} <span class="badge danger">أُعيدت للمشرف</span>{% endif %}<div>{{ rv.note|linebreaksbr }}</div></li>
+  {% endfor %}</ul>{% else %}<div class="empty">لا توجد ملاحظات بعد.</div>{% endif %}
+  {% if can_review %}
+  <form method="post" style="margin-top:1rem">{% csrf_token %}
+    <div class="field"><label>ملاحظاتك</label><textarea name="note" rows="3" required></textarea></div>
+    <div class="flex"><button class="btn" name="action" value="review">تسجيل الملاحظات وإحالة</button>
+    {% if can_return %}<button class="btn danger" name="action" value="return">إعادة للمشرف</button>{% endif %}</div>
+  </form>
+  {% endif %}
+</div>
+{% endwith %}
+{% endblock %}
+{% block scripts %}<script>
+document.querySelectorAll('[data-row]').forEach(row => {
+  const sync = () => {
+    const v = (row.querySelector('input[type=radio]:checked')||{}).value;
+    const reason = row.querySelector('.reason'); if(!reason) return;
+    reason.classList.toggle('show', v==='no' || v==='deferred');
+    row.querySelector('.kind-wrap').style.display = v==='no' ? '' : 'none';
+    row.classList.toggle('incomplete', !v);
+  };
+  row.addEventListener('change', sync);
+});
+</script>{% endblock %}

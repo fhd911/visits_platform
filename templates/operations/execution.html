@@ -1,0 +1,39 @@
+{% extends "base.html" %}{% load ui %}{% block title %}تسجيل التنفيذ{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>تسجيل التنفيذ</h1><p>سجّل ما نُفّذ وما لم يُنفّذ مع السبب. الزيارة المنفذة تفتح استمارتها مباشرة.</p></div></div>
+<div class="card">
+  <div class="card-head"><h2>بانتظار التسجيل</h2><span class="badge {% if pending %}warn{% else %}ok{% endif %}">{{ pending|length }}</span></div>
+  {% if pending %}
+  <ul class="list">
+  {% for item, form in pending %}
+    <li style="align-items:flex-start">{% include "operations/_item_line.html" %}
+      <form method="post" class="exec-form" style="min-width:320px">{% csrf_token %}
+        <input type="hidden" name="item" value="{{ item.pk }}">
+        <div class="radio-row">{{ form.executed }}</div>
+        <div class="reason" style="margin-top:.4rem">{{ form.reason }}<div style="height:.4rem"></div>{{ form.note }}</div>
+        <button class="btn sm" style="margin-top:.4rem">حفظ</button>
+      </form>
+    </li>
+  {% endfor %}
+  </ul>
+  {% else %}<div class="empty">لا توجد بنود بانتظار التسجيل.</div>{% endif %}
+</div>
+<div class="card">
+  <h2>آخر ما سُجّل</h2>
+  {% if recent %}
+  <table><thead><tr><th>البند</th><th>الحالة</th><th>السبب / الملاحظة</th><th>الاستمارة</th></tr></thead><tbody>
+  {% for item in recent %}
+    <tr><td>{% include "operations/_item_line.html" %}</td>
+      <td><span class="badge {{ item.status|tone }}">{{ item.get_status_display }}</span></td>
+      <td class="small">{{ item.execution.reason|dash }}{% if item.execution.note %} · {{ item.execution.note }}{% endif %}</td>
+      <td>{% if item.visit and item.visit.form %}<a href="{% url 'assessments:form' item.visit.form.pk %}"><span class="badge {{ item.visit.form.status|tone }}">{{ item.visit.form.get_status_display }}</span></a>{% else %}—{% endif %}</td></tr>
+  {% endfor %}</tbody></table>
+  {% else %}<div class="empty">—</div>{% endif %}
+</div>
+{% endblock %}
+{% block scripts %}<script>
+document.querySelectorAll('.exec-form').forEach(f => {
+  const sync = () => { const v = (f.querySelector('input[type=radio]:checked')||{}).value; f.querySelector('.reason').classList.toggle('show', v==='0'); };
+  f.addEventListener('change', sync); sync();
+});
+</script>{% endblock %}

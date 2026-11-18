@@ -1,0 +1,45 @@
+{% extends "base.html" %}{% load ui %}{% block title %}لوحة القيادة{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>مركز القيادة</h1><p>{{ today|date:"l j F Y" }}{% if week %} · {{ week }}{% endif %} · فترة القياس منذ {{ period_start|date:"j/n/Y" }}</p></div>
+</div>
+
+<div class="grid g4" style="margin-bottom:1rem">
+  <div class="kpi accent"><div class="label">تغطية الإسناد</div><div class="value t-{{ assignment_coverage|level }}">{{ assignment_coverage|pct }}</div>
+    <div class="hint">{{ total_schools|default:"—" }} مدرسة{% if unassigned %} · <a href="{% url 'org:schools' %}?flag=unassigned">{{ unassigned }} غير مسندة</a>{% endif %}</div></div>
+  <div class="kpi accent"><div class="label">تغطية الزيارات في الفترة</div><div class="value t-{{ visit_coverage|level }}">{{ visit_coverage|pct }}</div><div class="hint">{{ visits_n|default:"—" }} زيارة</div></div>
+  <div class="kpi accent"><div class="label">خطط هذا الأسبوع المعتمدة</div><div class="value t-{{ plans_rate|level }}">{{ plans_rate|pct }}</div>
+    <div class="hint">{{ plans_submitted }} من {{ supervisors|default:"—" }} مشرف{% if next_week %} · الأسبوع القادم: {{ next_plans|default:"—" }}{% endif %}</div></div>
+  <div class="kpi accent"><div class="label">تنفيذ هذا الأسبوع</div><div class="value t-{{ week_execution|level }}">{{ week_execution|pct }}</div>
+    <div class="hint">{{ week_planned|default:"—" }} بنداً مخططاً{% if week_unlogged %} · <span class="t-warn">{{ week_unlogged }} غير مسجل</span>{% endif %}</div></div>
+</div>
+
+<div class="grid g3">
+  <div class="card">
+    <div class="card-head"><h2>مسار الاستمارات</h2><a class="small" href="{% url 'assessments:queue' %}">بانتظاري ({{ queue|length }})</a></div>
+    <ul class="list">{% for label, n, s in pipeline_rows %}<li><span><span class="badge {{ s|tone }}">{{ label }}</span></span><strong>{{ n|default:"—" }}</strong></li>{% endfor %}</ul>
+    {% if open_forms %}<div class="alert error small" style="margin:.75rem 0 0">{{ open_forms }} استمارة لم تُقفل — تمنع أصحابها من تخطيط الأسبوع التالي.</div>{% endif %}
+  </div>
+  <div class="card">
+    <div class="card-head"><h2>أولويات بلا زيارة</h2><span class="badge {% if priority_unvisited_n %}danger{% else %}ok{% endif %}">{% if priority_total %}{{ priority_unvisited_n }} / {{ priority_total }}{% else %}—{% endif %}</span></div>
+    <ul class="list">{% for s in priority_unvisited %}<li><a href="{% url 'org:school' s.pk %}">{{ s }}</a><span class="small muted">{{ s.sector }}{% if s.is_first_improvement %} · الأولى للتحسين{% endif %}</span></li>
+    {% empty %}<li class="empty">{% if priority_total %}كل مدارس الأولوية زيرت في الفترة.{% else %}لا توجد مدارس موسومة بأولوية.{% endif %}</li>{% endfor %}</ul>
+  </div>
+  <div class="card">
+    <div class="card-head"><h2>أسباب عدم التنفيذ</h2></div>
+    <ul class="list">{% for name, n in reasons %}<li><span>{{ name|dash }}</span><strong>{{ n }}</strong></li>{% empty %}<li class="empty">—</li>{% endfor %}</ul>
+  </div>
+</div>
+
+<div class="grid g3">
+  <div class="card"><h2>الزيارات حسب النوع</h2><ul class="list">{% for label, n in type_rows %}<li><span>{{ label }}</span><strong>{{ n|dash }}</strong></li>{% endfor %}</ul></div>
+  <div class="card"><h2>حسب النمط</h2><ul class="list">{% for label, n in mode_rows %}<li><span>{{ label }}</span><strong>{{ n|dash }}</strong></li>{% endfor %}</ul></div>
+  <div class="card"><h2>مسارات الاستمارات</h2><ul class="list"><li><span>قيد الاستكمال</span><strong>{{ cycles_open|default:"—" }}</strong></li><li><span>مكتملة</span><strong>{{ cycles_done|default:"—" }}</strong></li></ul></div>
+</div>
+
+<div class="card">
+  <div class="card-head"><h2>المشرفون — قراءة متوازنة</h2><a class="small" href="{% url 'command:supervisors' %}">الجدول الكامل</a></div>
+  <p class="small muted" style="margin-top:0">الترتيب بالمؤشر المتوازن (التغطية، التنفيذ، انتظام الخطط، الأولويات، المتابعة، النتائج) — لا بعدد الزيارات وحده.</p>
+  <div style="overflow-x:auto"><table>{% include "command/_sup_head.html" %}<tbody>{% for r in top_rows %}{% include "command/_sup_row.html" %}{% empty %}<tr><td colspan="10" class="empty">لا يوجد مشرفون.</td></tr>{% endfor %}</tbody></table></div>
+</div>
+{% endblock %}

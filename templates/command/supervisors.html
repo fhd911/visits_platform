@@ -1,0 +1,12 @@
+{% extends "base.html" %}{% load ui %}{% block title %}المشرفون{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>المشرفون</h1><p>فترة القياس منذ {{ period_start|date:"j/n/Y" }}. «—» تعني أن البيانات غير كافية للحكم.</p></div></div>
+<div class="card" style="overflow-x:auto"><table>{% include "command/_sup_head.html" %}<tbody>
+{% for r in rows %}{% include "command/_sup_row.html" %}{% empty %}<tr><td colspan="10" class="empty">لا يوجد مشرفون.</td></tr>{% endfor %}
+</tbody></table></div>
+<div class="card small muted">
+  <strong>طريقة القراءة:</strong> التغطية = المدارس المسندة التي زيرت ÷ المسندة. التنفيذ = المنفذ ÷ المسجّل (يُحسب من 3 بنود فأكثر). انتظام الخطط = الأسابيع ذات الخطط المعتمدة ÷ الأسابيع الدراسية المنقضية.
+  تغطية الأولويات = مدارس الأولى للتحسين وذات الأولوية العالية التي زيرت. المتابعة = انضباط إقفال الاستمارات. النتائج = البنود المحسومة ÷ بنود الاستمارات المقفلة (من 5 بنود فأكثر).
+  المؤشر المتوازن = متوسط المكونات المتاحة، ولا يُحسب بأقل من 3 مكونات أو دون أي بيانات تنفيذ/متابعة.
+</div>
+{% endblock %}

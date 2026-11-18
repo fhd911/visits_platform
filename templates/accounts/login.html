@@ -1,0 +1,12 @@
+{% extends "base.html" %}{% block title %}تسجيل الدخول{% endblock %}
+{% block body %}
+<div class="auth-wrap"><div class="card auth-card">
+  <div class="brand" style="color:var(--green-900)"><span class="logo" style="color:#fff">ز</span> بوابة الزيارات</div>
+  <h1>تسجيل الدخول</h1>
+  <p class="muted">أدخل بريدك المسجّل وسنرسل إليك رمز تحقق لمرة واحدة.</p>
+  <form method="post">{% csrf_token %}
+    <div class="field">{{ form.email.label_tag }}{{ form.email }}{{ form.email.errors }}</div>
+    <button class="btn" style="width:100%;justify-content:center">إرسال الرمز</button>
+  </form>
+</div></div>
+{% endblock %}

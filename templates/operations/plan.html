@@ -1,0 +1,91 @@
+{% extends "base.html" %}{% load ui %}{% block title %}خطتي{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>الخطة الأسبوعية</h1><p>{{ week }} — من {{ week.start_date|date:"j/n" }} إلى {{ week.end_date|date:"j/n/Y" }}</p></div>
+  <div class="flex">
+    {% if prev_week %}<a class="btn ghost sm" href="{% url 'operations:plan' prev_week.pk %}">→ الأسبوع السابق</a>{% endif %}
+    {% if next_week %}<a class="btn ghost sm" href="{% url 'operations:plan' next_week.pk %}">الأسبوع التالي ←</a>{% endif %}
+  </div>
+</div>
+
+{% if not plan %}
+  <div class="card">
+    {% if blockers %}
+      <div class="alert error">لا يمكن إنشاء خطة هذا الأسبوع: لديك {{ blockers|length }} استمارة غير مقفلة.</div>
+      <ul class="list">{% for f in blockers %}<li><span>{{ f.visit }}</span><a class="btn sm" href="{% url 'assessments:form' f.pk %}">إكمال وإقفال</a></li>{% endfor %}</ul>
+    {% else %}
+      <p class="muted">لم تُنشأ خطة لهذا الأسبوع بعد.</p>
+      <form method="post">{% csrf_token %}<input type="hidden" name="action" value="create"><button class="btn">إنشاء خطة الأسبوع</button></form>
+    {% endif %}
+  </div>
+{% else %}
+  <div class="card flex">
+    <span class="badge {{ plan.status|tone }}">{{ plan.get_status_display }}</span>
+    <span class="muted small">{{ stats.visits }} زيارة · {{ stats.activities }} نشاط · التنفيذ {{ stats.rate|pct }}</span>
+    <span class="spacer"></span>
+    {% if plan.is_editable %}
+      <form method="post">{% csrf_token %}<input type="hidden" name="action" value="submit"><button class="btn sm">اعتماد الخطة</button></form>
+    {% else %}
+      <form method="post">{% csrf_token %}<input type="hidden" name="action" value="reopen"><button class="btn ghost sm">إعادة فتح للتعديل</button></form>
+    {% endif %}
+  </div>
+
+  <div class="days" style="margin-bottom:1rem">
+    {% for d in days %}
+    <div class="day {% if d.holiday %}holiday{% endif %}">
+      <h3><span>{{ d.name }}</span><span class="muted small">{{ d.date|date:"j/n" }}</span></h3>
+      {% if d.holiday %}<div class="small muted">إجازة</div>{% endif %}
+      {% for item in d.items %}
+        <div class="chip {{ item.kind }}">
+          <div><strong>{% if item.kind == 'visit' %}{{ item.school }}{% else %}{{ item.activity_type }}{% endif %}</strong></div>
+          <div class="meta">{% if item.kind == 'visit' %}{{ item.get_visit_type_display }}{% if item.phase %} ({{ item.get_phase_display }}){% endif %} · {{ item.get_mode_display }}{% else %}نشاط{% endif %}</div>
+          <div class="flex" style="margin-top:.25rem"><span class="badge {{ item.status|tone }}">{{ item.get_status_display }}</span>
+          {% if plan.is_editable and item.status == 'planned' %}
+            <form method="post" class="inline">{% csrf_token %}<input type="hidden" name="action" value="delete"><input type="hidden" name="item" value="{{ item.pk }}"><button class="btn danger sm" title="حذف">حذف</button></form>
+          {% endif %}</div>
+        </div>
+      {% empty %}{% if not d.holiday %}<div class="small t-muted">—</div>{% endif %}{% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+
+  {% if form %}
+  <div class="card">
+    <h2>إضافة بند</h2>
+    {% if form.non_field_errors %}<div class="alert error">{{ form.non_field_errors|join:" " }}</div>{% endif %}
+    <form method="post" id="item-form">{% csrf_token %}<input type="hidden" name="action" value="add">
+      <div class="field radio-row">{{ form.kind }}</div>
+      <div class="grid g3">
+        <div class="field">{{ form.date.label_tag }}{{ form.date }}{{ form.date.errors }}</div>
+        <div class="field v-only">{{ form.school.label_tag }}{{ form.school }}{{ form.school.errors }}</div>
+        <div class="field v-only">{{ form.visit_type.label_tag }}{{ form.visit_type }}{{ form.visit_type.errors }}</div>
+        <div class="field v-only">{{ form.mode.label_tag }}{{ form.mode }}{{ form.mode.errors }}</div>
+        <div class="field v-only phase-only">{{ form.phase.label_tag }}{{ form.phase }}{{ form.phase.errors }}</div>
+        <div class="field a-only">{{ form.activity_type.label_tag }}{{ form.activity_type }}{{ form.activity_type.errors }}</div>
+        <div class="field">{{ form.notes.label_tag }}{{ form.notes }}</div>
+      </div>
+      <button class="btn">إضافة</button>
+    </form>
+  </div>
+  {% endif %}
+{% endif %}
+{% endblock %}
+{% block scripts %}{% if form %}
+<script>
+(function(){
+  const allowed = {{ school_types_json|safe }};
+  const f = document.getElementById('item-form'); if(!f) return;
+  const kind = () => (f.querySelector('input[name=kind]:checked')||{}).value || 'visit';
+  const school = f.querySelector('[name=school]'), vt = f.querySelector('[name=visit_type]');
+  function sync(){
+    const k = kind();
+    f.querySelectorAll('.v-only').forEach(e => e.style.display = k==='visit' ? '' : 'none');
+    f.querySelectorAll('.a-only').forEach(e => e.style.display = k==='activity' ? '' : 'none');
+    const types = allowed[school.value] || [];
+    [...vt.options].forEach(o => { if(o.value){ o.hidden = !types.includes(o.value); } });
+    if (vt.selectedOptions[0] && vt.selectedOptions[0].hidden) vt.value = '';
+    f.querySelector('.phase-only').style.display = (k==='visit' && vt.value==='technical') ? '' : 'none';
+  }
+  f.addEventListener('change', sync); sync();
+})();
+</script>{% endif %}{% endblock %}

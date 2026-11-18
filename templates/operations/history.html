@@ -1,0 +1,14 @@
+{% extends "base.html" %}{% load ui %}{% block title %}سجل الخطط{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>سجل الخطط</h1></div><a class="btn" href="{% url 'operations:my_plan' %}">خطة الأسبوع الحالي</a></div>
+<div class="card">
+{% if plans %}
+<table><thead><tr><th>الأسبوع</th><th>الحالة</th><th>زيارات</th><th>أنشطة</th><th>المسجّل</th><th>نسبة التنفيذ</th><th></th></tr></thead><tbody>
+{% for p, s in plans %}
+<tr><td>{{ p.week }}</td><td><span class="badge {{ p.status|tone }}">{{ p.get_status_display }}</span></td>
+<td>{{ s.visits }}</td><td>{{ s.activities }}</td><td>{{ s.logged }} / {{ s.total }}</td>
+<td class="t-{{ s.rate|level }}">{{ s.rate|pct }}</td><td><a href="{% url 'operations:plan' p.week.pk %}">عرض</a></td></tr>
+{% endfor %}</tbody></table>
+{% else %}<div class="empty">لا توجد خطط سابقة.</div>{% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "base.html" %}{% load ui %}{% block title %}المدارس{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>المدارس</h1><p>{{ rows|length }} مدرسة</p></div>
+{% if user.is_staff %}<a class="btn ghost" href="{% url 'admin:org_school_add' %}">إضافة مدرسة</a>{% endif %}</div>
+<form class="card flex" method="get">
+  <input type="search" name="q" value="{{ q }}" placeholder="بحث بالاسم أو الرقم الوزاري أو القائد" style="max-width:320px">
+  <select name="sector" style="max-width:200px"><option value="">كل القطاعات</option>{% for s in sectors %}<option value="{{ s.pk }}" {% if sector == s.pk|stringformat:"s" %}selected{% endif %}>{{ s }}</option>{% endfor %}</select>
+  <select name="flag" style="max-width:200px"><option value="">الكل</option><option value="fi" {% if flag == 'fi' %}selected{% endif %}>الأولى للتحسين</option><option value="unassigned" {% if flag == 'unassigned' %}selected{% endif %}>غير مسندة</option></select>
+  <button class="btn sm">تصفية</button>
+</form>
+<div class="card">
+<table><thead><tr><th>المدرسة</th><th>القطاع</th><th>المرحلة</th><th>المشرفون</th><th>آخر زيارة</th><th>وسوم</th></tr></thead><tbody>
+{% for r in rows %}<tr>
+<td><a href="{% url 'org:school' r.school.pk %}">{{ r.school }}</a><div class="small muted">{{ r.school.ministry_code }}</div></td>
+<td>{{ r.school.sector }}</td><td>{{ r.school.get_stage_display }} · {{ r.school.get_gender_display }}</td>
+<td>{% for s in r.supervisors %}{{ s }}{% if not forloop.last %}، {% endif %}{% empty %}<span class="badge danger">غير مسندة</span>{% endfor %}</td>
+<td>{{ r.last.date|date:"j/n/Y"|dash }}</td>
+<td>{% if r.school.is_first_improvement %}<span class="badge warn">الأولى للتحسين</span>{% endif %} {% if r.school.priority == 2 %}<span class="badge danger">أولوية عالية</span>{% endif %}</td>
+</tr>{% empty %}<tr><td colspan="6" class="empty">لا نتائج.</td></tr>{% endfor %}
+</tbody></table></div>
+{% endblock %}

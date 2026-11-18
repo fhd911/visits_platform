@@ -1,0 +1,5 @@
+{% load ui %}<div>
+  <div><strong>{% if item.kind == 'visit' %}{{ item.get_visit_type_display }}{% if item.phase %} — {{ item.get_phase_display }}{% endif %}{% else %}{{ item.activity_type }}{% endif %}</strong>
+  {% if item.school %} · <a href="{% url 'org:school' item.school.pk %}">{{ item.school }}</a>{% endif %}</div>
+  <div class="small muted">{% if item.kind == 'visit' %}{{ item.get_mode_display }} · {% endif %}{{ item.date|date:"l j/n" }}{% if item.notes %} · {{ item.notes }}{% endif %}</div>
+</div>
